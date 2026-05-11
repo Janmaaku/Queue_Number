@@ -1,14 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <link rel="stylesheet" href="./css/index.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Queue Display</title>
+  <link rel="stylesheet" href="./css/index.css" />
 </head>
 <body>
-  <div class="main_wrapper">
-    <h1>QN0001</h1>
+
+  <div class="header">
+    <div class="header_logo">⬡ QUEUE</div>
+    <nav class="header_nav">
+      <a href="./index.html" class="nav_link active">DISPLAY</a>
+      <a href="./form.html" class="nav_link">GET TICKET</a>
+      <a href="./dashboard.html" class="nav_link">DASHBOARD</a>
+    </nav>
+    <div class="header_clock" id="clock">00:00:00</div>
   </div>
+
+  <div class="main_wrapper">
+
+    <div class="serving_label">NOW SERVING</div>
+
+    <!-- JS: update textContent with current queue number -->
+    <h1 class="queue_number" id="queue_number">---</h1>
+
+    <!-- JS: update with customer name from Firebase -->
+    <div class="customer_name" id="customer_name">WAITING FOR NEXT CUSTOMER</div>
+
+    <!-- JS: update with customer's purpose -->
+    <div class="customer_purpose" id="customer_purpose"></div>
+
+    <div class="stats_row">
+      <div class="stat_box">
+        <!-- JS: update with total served count -->
+        <div class="stat_value" id="stat_served">0</div>
+        <div class="stat_label">SERVED</div>
+      </div>
+      <div class="stat_divider"></div>
+      <div class="stat_box">
+        <!-- JS: update with total waiting count -->
+        <div class="stat_value" id="stat_waiting">0</div>
+        <div class="stat_label">WAITING</div>
+      </div>
+      <div class="stat_divider"></div>
+      <div class="stat_box">
+        <!-- JS: update with total visitors today -->
+        <div class="stat_value" id="stat_total">0</div>
+        <div class="stat_label">TOTAL TODAY</div>
+      </div>
+    </div>
+
+    <!-- JS: render waiting queue number chips inside .queue_chips -->
+    <div class="queue_strip">
+      <div class="queue_strip_label">QUEUE LINE</div>
+      <div class="queue_chips" id="queue_chips">
+        <span class="chip_empty">NO QUEUE</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span>⬤ LIVE DISPLAY</span>
+    <!-- JS: update with today's date -->
+    <span id="date_str"></span>
+    <span>RUBIO &amp; EBALES · ITC123</span>
+  </div>
+
+  <!-- JS: Firebase + display logic -->
+  <script src="./firebase/firebase.js"></script>
+  <script src="./js/index.js"></script>
+
 </body>
-</html>
+        </html>
