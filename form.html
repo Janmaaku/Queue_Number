@@ -1,25 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Ticket</title>
+  <link rel="stylesheet" href="./css/form.css" />
 </head>
-<link rel="stylesheet" href="./css/form.css">
 <body>
-  <div class="form_wrapper">
-    <h1>Form </h1>
 
-    <form action="">
-      <label for="full_name">Full Name:</label>
-      <input type="text" id="full_name" placeholder="Enter your name">
-      <label for="email">Email:</label>
-      <input type="email" id="email" placeholder="Enter your email">
-      <label for="purpose">Your Purpose:</label>
-      <textarea id="purpose" placeholder="Enter your purpose"></textarea>
-      <button type="submit">Submit</button>
-    </form>
+  <div class="header">
+    <div class="header_logo">⬡ QUEUETEK</div>
+    <nav class="header_nav">
+      <a href="./index.html" class="nav_link">DISPLAY</a>
+      <a href="./form.html" class="nav_link active">GET TICKET</a>
+      <a href="./dashboard.html" class="nav_link">DASHBOARD</a>
+    </nav>
+    <div class="header_clock" id="clock">00:00:00</div>
   </div>
-  
+
+  <div class="main_wrapper">
+
+    <div class="form_wrapper">
+      <div class="form_title">◈ CUSTOMER REGISTRATION</div>
+
+      <!-- JS: on submit, save form data to Firebase -->
+      <form action="" id="registration_form">
+
+        <label for="full_name">FULL NAME</label>
+        <input
+          type="text"
+          id="full_name"
+          name="full_name"
+          placeholder="Enter your full name"
+          maxlength="60"
+          autocomplete="off"
+          required
+        />
+
+        <label for="email">EMAIL ADDRESS</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Enter your email"
+          required
+        />
+
+        <label for="purpose">YOUR PURPOSE</label>
+        <select id="purpose" name="purpose" required>
+          <option value="" disabled selected>Select a service...</option>
+          <option value="Inquiry">Inquiry</option>
+          <option value="Payment">Payment</option>
+          <option value="Document Request">Document Request</option>
+          <option value="Enrollment">Enrollment</option>
+          <option value="Consultation">Consultation</option>
+          <option value="Complaint / Concern">Complaint / Concern</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <!-- JS: show validation error message here -->
+        <div class="form_error" id="form_error"></div>
+
+        <button type="submit">GET QUEUE NUMBER</button>
+
+      </form>
+    </div>
+
+    <div class="ticket_wrapper" id="ticket_wrapper">
+
+      <div class="ticket_idle" id="ticket_idle">
+        <div class="ticket_idle_icon">🎫</div>
+        <div class="ticket_idle_text">FILL IN THE FORM<br/>TO GET YOUR TICKET</div>
+      </div>
+
+      <!-- JS: populate fields and toggle display none/block on submit -->
+      <div class="ticket_result" id="ticket_result">
+
+        <div class="ticket_result_label">YOUR QUEUE NUMBER</div>
+
+        <!-- JS: set to generated queue number -->
+        <div class="ticket_number" id="ticket_number">000</div>
+
+        <div class="ticket_info_grid">
+          <div class="ticket_info_box">
+            <div class="ticket_info_label">NAME</div>
+            <!-- JS: set to submitted full_name -->
+            <div class="ticket_info_value" id="ticket_name">—</div>
+          </div>
+          <div class="ticket_info_box">
+            <div class="ticket_info_label">PURPOSE</div>
+            <!-- JS: set to submitted purpose -->
+            <div class="ticket_info_value" id="ticket_purpose">—</div>
+          </div>
+          <div class="ticket_info_box">
+            <div class="ticket_info_label">TIME ISSUED</div>
+            <!-- JS: set to current time -->
+            <div class="ticket_info_value" id="ticket_time">—</div>
+          </div>
+          <div class="ticket_info_box">
+            <div class="ticket_info_label">POSITION</div>
+            <!-- JS: set to position in queue -->
+            <div class="ticket_info_value" id="ticket_position">—</div>
+          </div>
+        </div>
+
+        <!-- JS: set estimated wait message -->
+        <div class="ticket_wait_msg" id="ticket_wait_msg"></div>
+
+        <button class="btn_new" id="btn_new_ticket">+ NEW REGISTRATION</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span>CUSTOMER TERMINAL</span>
+    <!-- JS: update with today's date -->
+    <span id="date_str"></span>
+    <span>RUBIO &amp; EBALES · ITC123</span>
+  </div>
+
+  <!-- JS: Firebase + form logic -->
+  <script src="./firebase/firebase.js"></script>
+  <script src="./js/form.js"></script>
+
 </body>
-</html>
+          </html>
+  
