@@ -1,11 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="./css/dashboard.css" />
 </head>
 <body>
-  
+
+  <div class="header">
+    <div class="header_logo">⬡ QUEUETEK</div>
+    <nav class="header_nav">
+      <a href="./index.html" class="nav_link">DISPLAY</a>
+      <a href="./form.html" class="nav_link">GET TICKET</a>
+      <a href="./dashboard.html" class="nav_link active">DASHBOARD</a>
+    </nav>
+    <div class="header_clock" id="clock">00:00:00</div>
+  </div>
+
+  <div class="main_wrapper">
+
+    <aside class="sidebar">
+
+      <div class="side_card side_card_amber">
+        <div class="side_card_title">◈ NOW SERVING</div>
+        <!-- JS: update with current serving number -->
+        <div class="side_serving_number" id="side_serving_number">---</div>
+        <!-- JS: update with current customer name -->
+        <div class="side_serving_name" id="side_serving_name">No customer yet</div>
+        <!-- JS: update with current customer purpose -->
+        <div class="side_serving_purpose" id="side_serving_purpose"></div>
+      </div>
+
+      <div class="side_card side_card_blue">
+        <div class="side_card_title">◈ TODAY'S STATS</div>
+        <div class="side_stats_grid">
+          <div class="side_stat">
+            <!-- JS: update with waiting count -->
+            <div class="side_stat_value amber" id="stat_waiting">0</div>
+            <div class="side_stat_label">WAITING</div>
+          </div>
+          <div class="side_stat">
+            <!-- JS: update with serving count (0 or 1) -->
+            <div class="side_stat_value blue" id="stat_serving">0</div>
+            <div class="side_stat_label">SERVING</div>
+          </div>
+          <div class="side_stat">
+            <!-- JS: update with done count -->
+            <div class="side_stat_value green" id="stat_done">0</div>
+            <div class="side_stat_label">DONE</div>
+          </div>
+          <div class="side_stat">
+            <!-- JS: update with total count -->
+            <div class="side_stat_value red" id="stat_total">0</div>
+            <div class="side_stat_label">TOTAL</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side_card">
+        <div class="side_card_title">◈ CONTROLS</div>
+        <!-- JS: call next customer from Firebase queue -->
+        <button class="btn btn_amber" id="btn_call_next">▶ CALL NEXT</button>
+        <!-- JS: mark current customer as done in Firebase -->
+        <button class="btn btn_blue" id="btn_mark_done">✓ MARK AS DONE</button>
+        <!-- JS: reset entire queue in Firebase -->
+        <button class="btn btn_red" id="btn_reset">↺ RESET ALL</button>
+      </div>
+
+    </aside>
+
+    <div class="table_area">
+
+      <div class="table_header">
+        <div class="table_title">◈ QUEUE VISITOR LOG</div>
+        <!-- JS: toggle .active on filter tabs and re-render table rows -->
+        <div class="filter_tabs">
+          <button class="filter_tab active" data-filter="all">ALL</button>
+          <button class="filter_tab" data-filter="waiting">WAITING</button>
+          <button class="filter_tab" data-filter="serving">SERVING</button>
+          <button class="filter_tab" data-filter="done">DONE</button>
+        </div>
+      </div>
+
+      <div class="table_wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>NAME</th>
+              <th>EMAIL</th>
+              <th>PURPOSE</th>
+              <th>TIME</th>
+              <th>STATUS</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <!-- JS: render rows from Firebase data into tbody -->
+          <tbody id="table_body">
+            <tr class="empty_row">
+              <td colspan="7">NO RECORDS YET</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span>ADMIN DASHBOARD</span>
+    <!-- JS: update with today's date -->
+    <span id="date_str"></span>
+    <span>RUBIO &amp; EBALES · ITC123</span>
+  </div>
+
+  <!-- JS: Firebase + dashboard logic -->
+  <script src="./firebase/firebase.js"></script>
+  <script src="./js/dashboard.js"></script>
+
 </body>
-</html>
+  </html>
+  
