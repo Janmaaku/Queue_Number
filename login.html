@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login - QUEUETEK</title>
+  <link rel="stylesheet" href="./css/login.css" />
+
+</head>
+
+<body>
+
+  <div class="login_container">
+    <div class="login_header">
+      <div class="login_logo">⬡</div>
+      <div class="login_title">QUEUETEK</div>
+      <div class="login_subtitle">Admin Dashboard</div>
+    </div>
+
+    <form id="login_form">
+      <div class="form_group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter username" autocomplete="off" required />
+      </div>
+
+      <div class="form_group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter password" autocomplete="off" required />
+      </div>
+
+      <button type="submit">Login</button>
+
+      <div id="login_error"></div>
+    </form>
+
+  </div>
+  
+  <script type="module" src="./firebase/firebase.js"></script>
+  <script type="module" src="./js/dashboard.js"></script>
+  <!-- Inside your index.html / login.html body -->
+  <script type="module">
+    import { initLoginPage } from './js/auth.js';
+
+    // Initialize the login logic when the DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      initLoginPage();
+    });
+  </script>
+
+</body>
+
+</html>
