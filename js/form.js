@@ -209,6 +209,13 @@ function resetForm() {
     form.reset();
     form.style.opacity = "1";
     form.style.pointerEvents = "auto";
+
+    // --- ADD THIS PART TO RESET THE BUTTON ---
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.textContent = "GET QUEUE NUMBER"; // Reset text
+      submitBtn.disabled = false;                // Re-enable click
+    }
   }
 
   if (ticketIdle) ticketIdle.style.display = "block";

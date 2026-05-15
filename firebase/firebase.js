@@ -1,18 +1,22 @@
 // Import Firebase SDKs
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  push,
-  set,
-  get,
-  update,
-  remove,
-  onValue,
-  query,
-  orderByChild,
-  equalTo,
-} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+import { limit } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js"; // Add limit to imports
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  addDoc, 
+  getDoc, 
+  getDocs, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy, 
+  onSnapshot, 
+  serverTimestamp,
+  writeBatch
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -28,32 +32,37 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
-
+const db = getFirestore(app);
 // ==================== QUEUE MANAGEMENT FUNCTIONS ====================
 
 /**
  * Generate a new queue number based on today's highest number
  */
 export async function generateQueueNumber() {
-  try {
+try {
     const today = new Date().toISOString().split("T")[0];
-    const queueRef = ref(database, `queue/${today}`);
-    const snapshot = await get(queueRef);
+    const ticketsRef = collection(db, "tickets");
+    
+    const q = query(
+      ticketsRef, 
+      where("date", "==", today), 
+      orderBy("queueNumber", "desc"), 
+      limit(1)
+    );
+    
+    const snapshot = await getDocs(q);
 
-    let maxNumber = 0;
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      Object.values(data).forEach((ticket) => {
-        const num = parseInt(ticket.queueNumber);
-        if (num > maxNumber) maxNumber = num;
-      });
+    if (!snapshot.empty) {
+      const lastNumber = Number(snapshot.docs[0].data().queueNumber);
+      console.log("Last queue number found:", lastNumber); // debug
+      return lastNumber + 1;
     }
 
-    return maxNumber + 1;
-  } catch (error) {
-    console.error("Error generating queue number:", error);
+    console.log("No tickets today, starting at 1");
     return 1;
+  } catch (error) {
+    console.error("Generator Error — index may be missing:", error.message);
+    throw error; // Don't silently return 1, let caller handle it
   }
 }
 
@@ -61,34 +70,33 @@ export async function generateQueueNumber() {
  * Submit a new ticket to Firebase
  */
 export async function submitTicket(fullName, email, purpose) {
-  try {
+ try {
     const today = new Date().toISOString().split("T")[0];
-    const queueNumber = await generateQueueNumber();
+    const nextNumber = await generateQueueNumber();
     const now = new Date();
-    const timeIssued = now.toLocaleTimeString("en-US", { hour12: false });
+    
+    const stats = await getTodayStats();
+    const initialStatus = (stats.total === 0) ? "serving" : "waiting";
 
     const ticketData = {
-      queueNumber: queueNumber,
+      queueNumber: nextNumber,
       fullName: fullName,
       email: email,
       purpose: purpose,
-      timeIssued: timeIssued,
-      status: "waiting", // waiting, serving, done
-      position: 0,
-      createdAt: now.getTime(),
+      timeIssued: now.toLocaleTimeString("en-US", { hour12: false }),
+      status: initialStatus,
+      createdAt: serverTimestamp(), 
       date: today,
     };
 
-    const ticketRef = push(ref(database, `queue/${today}`));
-    await set(ticketRef, ticketData);
+    await addDoc(collection(db, "tickets"), ticketData);
 
     return {
       success: true,
-      queueNumber: queueNumber,
-      position: await getQueuePosition(today, queueNumber),
+      queueNumber: nextNumber,
+      position: await getQueuePosition(today, nextNumber),
     };
   } catch (error) {
-    console.error("Error submitting ticket:", error);
     return { success: false, error: error.message };
   }
 }
@@ -97,22 +105,17 @@ export async function submitTicket(fullName, email, purpose) {
  * Get position in queue for a specific ticket
  */
 export async function getQueuePosition(date, queueNumber) {
-  try {
-    const queueRef = ref(database, `queue/${date}`);
-    const snapshot = await get(queueRef);
-
-    if (!snapshot.exists()) return 0;
-
-    let position = 0;
-    const data = snapshot.val();
-
-    Object.values(data).forEach((ticket) => {
-      if (ticket.status === "waiting" && ticket.queueNumber < queueNumber) {
-        position++;
-      }
-    });
-
-    return position + 1;
+ try {
+    const ticketsRef = collection(db, "tickets");
+    const q = query(
+      ticketsRef, 
+      where("date", "==", date), 
+      where("status", "==", "waiting"),
+      where("queueNumber", "<", queueNumber)
+    );
+    
+    const snapshot = await getDocs(q);
+    return snapshot.size + 1;
   } catch (error) {
     console.error("Error getting queue position:", error);
     return 0;
@@ -123,30 +126,23 @@ export async function getQueuePosition(date, queueNumber) {
  * Get today's queue statistics
  */
 export async function getTodayStats() {
-  try {
-    const today = new Date().toISOString().split("T")[0];
-    const queueRef = ref(database, `queue/${today}`);
-    const snapshot = await get(queueRef);
-
+try {
+    const tickets = await getTodayTickets();
     let stats = {
-      total: 0,
+      total: tickets.length,
       waiting: 0,
       serving: 0,
       done: 0,
       currentServing: null,
     };
 
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      Object.values(data).forEach((ticket) => {
-        stats.total++;
-        if (ticket.status === "waiting") stats.waiting++;
-        else if (ticket.status === "serving") {
-          stats.serving++;
-          stats.currentServing = ticket;
-        } else if (ticket.status === "done") stats.done++;
-      });
-    }
+    tickets.forEach((ticket) => {
+      if (ticket.status === "waiting") stats.waiting++;
+      else if (ticket.status === "serving") {
+        stats.serving++;
+        stats.currentServing = ticket;
+      } else if (ticket.status === "done") stats.done++;
+    });
 
     return stats;
   } catch (error) {
@@ -159,25 +155,16 @@ export async function getTodayStats() {
  * Get all tickets for today
  */
 export async function getTodayTickets() {
-  try {
+try {
     const today = new Date().toISOString().split("T")[0];
-    const queueRef = ref(database, `queue/${today}`);
-    const snapshot = await get(queueRef);
+    const ticketsRef = collection(db, "tickets");
+    const q = query(ticketsRef, where("date", "==", today), orderBy("queueNumber", "asc"));
 
-    if (!snapshot.exists()) return [];
-
-    const tickets = [];
-    const data = snapshot.val();
-
-    Object.entries(data).forEach(([id, ticket]) => {
-      tickets.push({
-        id: id,
-        ...ticket,
-      });
-    });
-
-    // Sort by queue number
-    return tickets.sort((a, b) => a.queueNumber - b.queueNumber);
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
   } catch (error) {
     console.error("Error getting today's tickets:", error);
     return [];
@@ -188,26 +175,20 @@ export async function getTodayTickets() {
  * Call next customer in queue
  */
 export async function callNextCustomer() {
-  try {
-    const today = new Date().toISOString().split("T")[0];
+ try {
     const tickets = await getTodayTickets();
 
-    // Mark previous serving as done
-    for (const ticket of tickets) {
-      if (ticket.status === "serving") {
-        const ticketRef = ref(database, `queue/${today}/${ticket.id}`);
-        await update(ticketRef, { status: "done" });
-        break;
-      }
+    // 1. Mark previous serving as done
+    const servingTicket = tickets.find(t => t.status === "serving");
+    if (servingTicket) {
+      await updateDoc(doc(db, "tickets", servingTicket.id), { status: "done" });
     }
 
-    // Find first waiting ticket
-    for (const ticket of tickets) {
-      if (ticket.status === "waiting") {
-        const ticketRef = ref(database, `queue/${today}/${ticket.id}`);
-        await update(ticketRef, { status: "serving" });
-        return ticket;
-      }
+    // 2. Find first waiting ticket
+    const nextTicket = tickets.find(t => t.status === "waiting");
+    if (nextTicket) {
+      await updateDoc(doc(db, "tickets", nextTicket.id), { status: "serving" });
+      return nextTicket;
     }
 
     return null;
@@ -221,16 +202,13 @@ export async function callNextCustomer() {
  * Mark current customer as done
  */
 export async function markCurrentAsDone() {
-  try {
-    const today = new Date().toISOString().split("T")[0];
+try {
     const tickets = await getTodayTickets();
+    const servingTicket = tickets.find(t => t.status === "serving");
 
-    for (const ticket of tickets) {
-      if (ticket.status === "serving") {
-        const ticketRef = ref(database, `queue/${today}/${ticket.id}`);
-        await update(ticketRef, { status: "done" });
-        return true;
-      }
+    if (servingTicket) {
+      await updateDoc(doc(db, "tickets", servingTicket.id), { status: "done" });
+      return true;
     }
     return false;
   } catch (error) {
@@ -243,10 +221,16 @@ export async function markCurrentAsDone() {
  * Reset entire queue for today
  */
 export async function resetQueue() {
-  try {
-    const today = new Date().toISOString().split("T")[0];
-    const queueRef = ref(database, `queue/${today}`);
-    await remove(queueRef);
+try {
+    const tickets = await getTodayTickets();
+    const batch = writeBatch(db);
+    
+    tickets.forEach((ticket) => {
+      const ticketRef = doc(db, "tickets", ticket.id);
+      batch.delete(ticketRef);
+    });
+
+    await batch.commit();
     return true;
   } catch (error) {
     console.error("Error resetting queue:", error);
@@ -258,34 +242,22 @@ export async function resetQueue() {
  * Listen to real-time queue updates
  */
 export function listenToQueueUpdates(callback) {
-  try {
-    const today = new Date().toISOString().split("T")[0];
-    const queueRef = ref(database, `queue/${today}`);
+ const today = new Date().toISOString().split("T")[0];
+  const q = query(
+    collection(db, "tickets"), 
+    where("date", "==", today), 
+    orderBy("queueNumber", "asc")
+  );
 
-    const unsubscribe = onValue(queueRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const tickets = [];
-        const data = snapshot.val();
-
-        Object.entries(data).forEach(([id, ticket]) => {
-          tickets.push({
-            id: id,
-            ...ticket,
-          });
-        });
-
-        tickets.sort((a, b) => a.queueNumber - b.queueNumber);
-        callback(tickets);
-      } else {
-        callback([]);
-      }
-    });
-
-    return unsubscribe;
-  } catch (error) {
-    console.error("Error setting up listener:", error);
-    return () => {};
-  }
+  return onSnapshot(q, (snapshot) => {
+    const tickets = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    callback(tickets);
+  }, (error) => {
+    console.error("Listener error:", error);
+  });
 }
 
 /**
@@ -308,4 +280,4 @@ export async function getCurrentlyServing() {
   }
 }
 
-export { database };
+export { db };

@@ -5,9 +5,7 @@ import {
   markCurrentAsDone,
   resetQueue,
   listenToQueueUpdates,
-} from "./firebase.js";
-import { protectPage, initLogoutButtons } from "./auth.js";
-
+} from "../firebase/firebase.js";
 // ==================== UTILITY FUNCTIONS ====================
 
 /**
@@ -277,9 +275,6 @@ async function loadQueueTable(filter = "all") {
 export function initDashboard() {
   console.log("Initializing dashboard...");
 
-  // Check authentication
-  protectPage();
-
   // Update clock and date
   updateClock();
   updateDate();
@@ -298,9 +293,6 @@ export function initDashboard() {
   document.querySelectorAll(".filter_tab").forEach((tab) => {
     tab.addEventListener("click", handleFilterChange);
   });
-
-  // Setup logout buttons
-  initLogoutButtons();
 
   // Load initial data
   loadInitialData();
